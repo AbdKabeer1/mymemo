@@ -1,0 +1,9 @@
+# MyMemo project files
+__pycache__/
+*.pyc
+.venv/
+data/
+*.db
+nohup.out
+.vercel
+.env*

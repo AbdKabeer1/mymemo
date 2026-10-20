@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyMemo — Finnish Spelling Gym</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇫🇮</text></svg>">
+  <link rel="stylesheet" href="/static/css/style.css?v=7">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#/home">
+        <span class="brand-mark">M</span>
+        <span class="brand-text">MyMemo<small>Suomen sanaharjoittelua</small></span>
+      </a>
+      <nav id="nav" class="nav">
+        <a href="#/home" class="nav-item" data-view="home">Home</a>
+        <a href="#/play" class="nav-item" data-view="play">Play puzzle</a>
+        <a href="#/words" class="nav-item" data-view="words">My Words</a>
+        <a href="#/test" class="nav-item" data-view="test">Take a test</a>
+        <a href="#/settings" class="nav-item" data-view="settings">Settings</a>
+      </nav>
+      <div class="top-chips">
+        <button class="chip" id="authBtn" style="cursor:pointer">Sign in</button>
+        <span class="chip chip-level" id="levelChip">A1</span>
+        <span class="chip" id="xpChip">0 XP</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <section id="view" class="view"></section>
+  </main>
+
+  <div id="modalRoot"></div>
+  <script src="/static/js/app.js?v=7"></script>
+</body>
+</html>
