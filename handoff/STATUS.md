@@ -4,6 +4,19 @@ Last updated: 2026-10-20 08:35
 
 ## Done
 
+- **Word bank expanded to 2036 unique words** (A1 248 · A2 250 · B1 757 · B2 607 ·
+  C1 151 · C2 23), seeded locally and in Turso. Added months, quantities, household,
+  clothing, food, animals, plants, city/transport, shopping, health, working life,
+  education, society, tech, ~150 verbs, ~70 adjectives, adverbs and abstract nouns.
+- **Automatic tagging**: manual adds and CSV imports no longer ask for level/theme.
+  `auto_tag()` uses an exact curriculum match, else Finnish word length + English
+  keyword heuristics. Verified locally and in production.
+- **"Start test" fix**: personal-bank rounds now default to **All levels / All themes**
+  (the inherited A1 filter could empty the round), an empty bank shows a dedicated
+  state instead of a dead-looking form, and zero-result messages appear at the top
+  and scroll into view.
+- Verified on production: library 2036, auto-tag works, empty-account test screen
+  shows the empty state, user data (accounts) preserved, test rows cleaned.
 - **Turso production DB provisioned & seeded**: `words` = 1007, schema created
   (words/my_words/sessions/settings), remote smoke test passed: bootstrap, passing
   words (bank + box/due), settings persistence, scoped export, cleanup. Remote init

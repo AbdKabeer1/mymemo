@@ -14,7 +14,7 @@ import os
 import sqlite3
 import urllib.request
 
-from seed_data import THEMES, WORDS
+from seed_data import LEVELS, THEMES, WORDS
 
 TURSO_URL = os.environ.get("TURSO_DATABASE_URL", "").strip()
 TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "").strip()
@@ -305,6 +305,80 @@ def count_words(conn):
     return conn.execute("SELECT COUNT(*) c FROM words").fetchone()["c"]
 
 
+# ---------------------------------------------------------------- auto tagging
+
+THEME_KEYWORDS = {
+    "shopping": ["money", "price", "buy", "sell", "shop", "store", "pay", "cost",
+                 "discount", "receipt", "credit", "currency", "loan", "invoice",
+                 "cash", "cheap", "expensive", "sale", "order", "delivery"],
+    "food": ["food", "eat", "drink", "bread", "milk", "water", "coffee", "tea",
+             "meat", "fish", "potato", "apple", "cheese", "salt", "sugar", "egg",
+             "soup", "rice", "fruit", "vegetable", "berry", "cake", "juice",
+             "beer", "wine", "restaurant", "cafe", "café", "meal", "breakfast",
+             "lunch", "dinner", "snack", "butter", "flour", "onion", "garlic",
+             "honey", "jam", "plate", "cup", "glass", "fork", "knife", "spoon"],
+    "transport": ["bus", "train", "car", "bicycle", "bike", "plane", "ship",
+                  "ticket", "station", "street", "road", "drive", "travel", "trip",
+                  "airport", "ferry", "metro", "tram", "traffic", "parking",
+                  "passenger", "driver", "route", "platform", "vehicle"],
+    "health": ["health", "doctor", "hospital", "medicine", "sick", "ill", "pain",
+               "nurse", "dentist", "pharmacy", "blood", "heart", "tooth", "teeth",
+               "headache", "flu", "clinic", "treatment", "injury", "wound", "fever",
+               "cough", "allergy", "vaccine", "therapy", "mental", "stress"],
+    "work": ["work", "job", "salary", "employer", "employee", "office", "meeting",
+             "contract", "hire", "interview", "colleague", "boss", "manager",
+             "company", "project", "task", "career", "overtime", "workplace",
+             "deadline", "client", "business", "team", "shift", "wage", "staff"],
+    "social": ["law", "court", "government", "citizen", "social", "tax", "police",
+               "city", "municipality", "benefit", "election", "society", "community",
+               "permit", "registration", "official", "authority", "public",
+               "neighbour", "neighbor", "immigration", "parliament", "rights"],
+    "home": ["house", "home", "room", "kitchen", "door", "window", "bed", "table",
+             "chair", "furniture", "floor", "wall", "lamp", "clean", "laundry",
+             "key", "apartment", "flat", "sofa", "cupboard", "shelf", "towel",
+             "shower", "electricity", "heating", "garden", "balcony", "stair",
+             "mirror", "carpet", "curtain", "sink", "oven", "fridge"],
+    "nature": ["tree", "forest", "sea", "lake", "snow", "rain", "sun", "weather",
+               "wind", "cloud", "animal", "bird", "dog", "cat", "horse", "cow",
+               "sheep", "fox", "bear", "wolf", "moose", "insect", "flower", "grass",
+               "stone", "river", "island", "mountain", "sky", "moon", "star"],
+}
+
+LEVEL_HINTS = {"A1": 6, "A2": 8, "B1": 10, "B2": 13}
+
+
+def _guess_level(finnish):
+    n = len(finnish.replace("-", "").replace(" ", ""))
+    if n <= 6:
+        return "A1"
+    if n <= 8:
+        return "A2"
+    if n <= 10:
+        return "B1"
+    if n <= 13:
+        return "B2"
+    return "C1"
+
+
+def _guess_theme(english):
+    low = " " + english.lower() + " "
+    best, hits = "daily", 0
+    for theme, words in THEME_KEYWORDS.items():
+        count = sum(1 for w in words if " " + w in low or w + " " in low)
+        if count > hits:
+            best, hits = theme, count
+    return best
+
+
+def auto_tag(conn, finnish, english):
+    """Level + theme for a word: exact curriculum match, else heuristics."""
+    row = conn.execute(
+        "SELECT level, theme FROM words WHERE finnish = ?", (finnish,)).fetchone()
+    if row:
+        return row["level"], row["theme"]
+    return _guess_level(finnish), _guess_theme(english)
+
+
 # ---------------------------------------------------------------- my words
 
 def query_my_words(conn, client, q=None, limit=2000):
@@ -324,7 +398,9 @@ def count_my_words(conn, client):
         "SELECT COUNT(*) c FROM my_words WHERE client_id = ?", (client,)).fetchone()["c"]
 
 
-def add_my_word(conn, client, finnish, english, level, theme):
+def add_my_word(conn, client, finnish, english, level=None, theme=None):
+    if not level or level not in LEVELS or not theme or theme == "custom":
+        level, theme = auto_tag(conn, finnish, english)
     conn.execute(
         "INSERT OR IGNORE INTO my_words"
         " (client_id, finnish, english, level, theme, created_at)"
@@ -564,8 +640,8 @@ def save_settings(conn, client, values):
 
 # ---------------------------------------------------------------- import / data
 
-def import_rows(conn, client, rows, target="library", default_level="B1",
-                default_theme="custom"):
+def import_rows(conn, client, rows, target="library", default_level=None,
+                default_theme=None):
     added = skipped = 0
     for row in rows:
         if not row or len(row) < 2:
@@ -575,10 +651,16 @@ def import_rows(conn, client, rows, target="library", default_level="B1",
         if not finnish or not english:
             skipped += 1
             continue
-        level = str(row[2]).strip().upper() if len(row) > 2 and row[2] else default_level
-        if level not in ("A1", "A2", "B1", "B2", "C1", "C2"):
-            level = default_level
-        theme = str(row[3]).strip() if len(row) > 3 and row[3] else default_theme
+        level = str(row[2]).strip().upper() if len(row) > 2 and row[2] else None
+        if level not in LEVELS:
+            level = None
+        theme = str(row[3]).strip() if len(row) > 3 and row[3] else None
+        if theme in ("", "custom"):
+            theme = None
+        if not level or not theme:
+            auto_level, auto_theme = auto_tag(conn, finnish, english)
+            level = level or default_level or auto_level
+            theme = theme or default_theme or auto_theme
         if target == "mywords":
             before = count_my_words(conn, client)
             add_my_word(conn, client, finnish, english, level, theme)

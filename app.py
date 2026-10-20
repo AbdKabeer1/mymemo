@@ -159,7 +159,7 @@ def api_add_myword():
             if not finnish or not english:
                 continue
             db.add_my_word(c, client, finnish, english,
-                           it.get("level") or "B1", it.get("theme") or "custom")
+                           it.get("level") or None, it.get("theme") or None)
         return jsonify(count=db.count_my_words(c, client))
 
 
@@ -179,8 +179,8 @@ def api_import():
         target = "library"
     with conn() as c:
         result = db.import_rows(c, scope(), rows, target,
-                                data.get("defaultLevel", "B1"),
-                                data.get("defaultTheme", "custom"))
+                                data.get("defaultLevel") or None,
+                                data.get("defaultTheme") or None)
     return jsonify(result)
 
 

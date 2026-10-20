@@ -187,24 +187,29 @@ function setupForm(root, opts) {
       </div>
     </div>`);
 
-  const cfg = { direction: startDir, count: 10, level: s.defaultLevel, theme: "all",
+  const cfg = { direction: startDir, count: 10,
+                level: opts.testMode ? "mixed" : s.defaultLevel,
+                theme: "all",
                 source: opts.testMode ? "mywords" : "library" };
+  const paints = [];
   $$(".seg", root).forEach(seg => {
     const key = seg.dataset.seg;
     if (!cfg[key]) return;
+    const paint = () => $$("button", seg).forEach(b => b.classList.toggle("on", b.dataset.v === String(cfg[key])));
+    paints.push(paint);
     paint();
-    function paint() {
-      $$("button", seg).forEach(b => b.classList.toggle("on", b.dataset.v === String(cfg[key])));
-    }
     seg.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (!b || !(b.dataset.v)) return;
       cfg[key] = b.dataset.v;
-      paint();
+      // personal banks are not curriculum slices: show everything by default
+      if (key === "source" && cfg[key] !== "library") {
+        cfg.level = "mixed";
+        cfg.theme = "all";
+      }
+      paints.forEach(fn => fn());
     });
   });
-  $$('.seg[data-seg="count"] button, .seg[data-seg="level"] button', root).forEach(b =>
-    b.classList.toggle("on", b.dataset.v === String(cfg[b.closest(".seg").dataset.seg])));
   return cfg;
 }
 
@@ -351,11 +356,16 @@ function viewPlay(view) {
 --------------------------------------------------------------------------- */
 function viewTest(view) {
   if (!B.summary.savedCount) {
-    view.insertAdjacentHTML("beforeend", `<div class="card" style="margin-bottom:18px">
+    view.innerHTML = `<div class="card">
       <h3>Your bank is empty</h3>
-      <div class="sub" style="margin:0">Play a puzzle — every word you spell correctly lands in your bank
-        automatically. You can also add or import words in My Words.</div>
-    </div>`);
+      <div class="sub" style="margin-bottom:16px">Play a puzzle — every word you spell correctly
+        lands in your bank automatically. You can also add or import words in My Words.</div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap">
+        <a class="btn primary" href="#/play">🧩 Play a puzzle</a>
+        <a class="btn" href="#/words">💾 Open My Words</a>
+      </div>
+    </div>`;
+    return;
   }
   const cfg = setupForm(view, {
     testMode: true,
@@ -384,10 +394,14 @@ async function startRound(view, cfg) {
       : cfg.source === "weak"
         ? "No weak words yet — get a few wrong on purpose (or not). Play a round first."
         : cfg.mode === "test"
-          ? "Your bank has no words matching that filter yet — play a puzzle or import words first."
-          : "No words match those filters yet — pick another theme or level.";
-    view.insertAdjacentHTML("beforeend", `<div class="empty" style="margin-top:18px">
-      <span class="big">🤷</span>${msg}</div>`);
+          ? "Your bank has no words matching that filter yet — try “All” level and “All themes”, or add words first."
+          : "No words match those filters yet — try “All” level and “All themes”, or pick another theme.";
+    const card = document.createElement("div");
+    card.className = "card";
+    card.style.marginTop = "18px";
+    card.innerHTML = `<div class="empty"><span class="big">🤷</span>${esc(msg)}</div>`;
+    view.prepend(card);
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
   game = {
@@ -740,17 +754,12 @@ async function viewWords(view) {
     </div>
     <div class="card">
       <h3>Import from CSV</h3>
-      <div class="sub">One word per line: <b>finnish, english</b> — optionally add <b>, level, theme</b>.
-        Often the app where you already study lets you export columns as CSV; paste them here.
+      <div class="sub">One word per line: <b>finnish, english</b>.
+        Level and theme are assigned automatically (existing curriculum words keep their tags).
         Semicolons and tabs also work.</div>
-      <textarea id="csvBox" placeholder="työpaikka, workplace&#10;kassa, checkout, A2, shopping&#10;talouskasvu, economic growth, C2"></textarea>
+      <textarea id="csvBox" placeholder="työpaikka, workplace&#10;kassa, checkout&#10;talouskasvu, economic growth"></textarea>
       <div class="toolbar" style="margin-top:12px">
         <span class="chip" id="csvCount">0 lines parsed</span>
-        <select id="csvLevel" style="max-width:140px">${LEVELS.map(l => `<option ${l === "B1" ? "selected" : ""}>${l}</option>`).join("")}</select>
-        <select id="csvTheme" style="max-width:220px">
-          <option value="custom" selected>Theme: custom</option>
-          ${B.themes.map(t => `<option value="${t.id}">${t.emoji} ${esc(t.label)}</option>`).join("")}
-        </select>
         <select id="csvTarget" style="max-width:240px">
           <option value="mywords" selected>Import to: my bank</option>
           <option value="library">Import to: practice curriculum</option>
@@ -773,7 +782,7 @@ async function viewWords(view) {
     if (!rows.length) { $("#csvMsg").textContent = "Nothing importable found."; return; }
     const target = $("#csvTarget").value;
     const res = await api("/api/import", { method: "POST", body: {
-      rows, target, defaultLevel: $("#csvLevel").value, defaultTheme: $("#csvTheme").value } });
+      rows, target } });
     $("#csvMsg").innerHTML = `✅ Imported <b>${res.added}</b>, skipped ${res.skipped} (duplicates/invalid).`;
     box.value = ""; upd(); bootstrap(); loadMyWords();
   });
@@ -837,11 +846,8 @@ function addWordModal() {
       <div class="grid grid-2">
         <div class="field"><label>Finnish</label><input type="text" id="nwFi" placeholder="esim. työsopimus"></div>
         <div class="field"><label>English</label><input type="text" id="nwEn" placeholder="employment contract"></div>
-        <div class="field"><label>Level</label>
-          <select id="nwLv">${LEVELS.map(l => `<option ${l === "B1" ? "selected" : ""}>${l}</option>`).join("")}</select></div>
-        <div class="field"><label>Theme</label>
-          <select id="nwTh">${themes.map(t => `<option value="${t}">${t === "custom" ? "Custom" : esc(t)}</option>`).join("")}</select></div>
       </div>
+      <div class="sub" style="margin:12px 0 0">Level and theme are assigned automatically.</div>
       <div style="margin-top:16px; display:flex; gap:10px; justify-content:flex-end">
         <button class="btn" id="nwCancel">Cancel</button>
         <button class="btn primary" id="nwSave">Save word</button>
@@ -854,7 +860,7 @@ function addWordModal() {
     const finnish = $("#nwFi", modal).value.trim();
     const english = $("#nwEn", modal).value.trim();
     if (!finnish || !english) return;
-    await api("/api/mywords", { method: "POST", body: { words: [{ finnish, english, level: $("#nwLv", modal).value, theme: $("#nwTh", modal).value }] } });
+    await api("/api/mywords", { method: "POST", body: { words: [{ finnish, english }] } });
     modal.remove(); bootstrap(); loadMyWords();
   });
   $("#nwFi", modal).focus();

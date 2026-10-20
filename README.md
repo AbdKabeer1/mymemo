@@ -93,8 +93,8 @@ Being exactly one letter off (anything else) is simply wrong at every level.
 
 ### Practice curriculum vs your bank
 
-The game seeds from a **practice curriculum** of 1007 Finnish↔English words
-(`seed_data.py`), tagged by CEFR level (A1 212 · A2 171 · B1 295 · B2 249 · C1 60 · C2 20)
+The game seeds from a **practice curriculum** of 2036 Finnish↔English words
+(`seed_data.py`), tagged by CEFR level (A1 248 · A2 250 · B1 757 · B2 607 · C1 151 · C2 23)
 and theme: Working Life & Jobs, Shopping & Money, Daily Life, Transportation,
 Healthcare, Social Services & Society, Food & Drink, Home & Living, Nature & Weather.
 The curriculum is practice material — it is **not** your bank and its size is never
@@ -104,8 +104,9 @@ shown inside a game.
 
 - every word you spell correctly in a puzzle or test — results screens confirm
   "＋N new words added to your bank";
-- words you add manually;
-- words you upload/import from CSV (defaults to your bank).
+- words you add manually — **no level/theme questions**: the app assigns them
+  automatically (curriculum match, else length + meaning heuristics);
+- words you upload/import from CSV (defaults to your bank, tags assigned automatically).
 
 "My Words", the Home stat "Your bank" and the counter for a test all refer to this
 personal bank. **Mastered** = review box 3+ (word is holding at an 8-day interval or

@@ -61,6 +61,18 @@ Record choices the next agent should not re-litigate without a reason.
 - Chosen: `gh repo create AbdKabeer1/mymemo --public --push`; secrets excluded via `.gitignore` (`data/`, `.env*`, `.vercel`, `*.db`).
 - Commit: `MyMemo: Finnish spelling trainer with SRS, accounts, Turso + Vercel deploy`.
 
+## 2026-10-20 — 2036-word curriculum + automatic tagging
+
+- Context: user asked for ~1000 more A1–B2 everyday words, and no level/theme questions when adding words.
+- Chosen: extend `seed_data.py` to 2036 unique entries (script-verified zero duplicates); `auto_tag()` resolves tags server-side — exact curriculum match first, then length bands (A1≤6 … C1) plus theme keyword heuristics. Manual add modal and CSV form only ask for Finnish/English.
+- Trade-off: heuristic levels/themes for out-of-curriculum words can be approximate; API still accepts explicit columns on import for overrides.
+- Revisit if: a real frequency list is available — swap heuristics for frequency-band lookups.
+
+## 2026-10-20 — "Start test" looked broken
+
+- Root cause: test rounds inherited the A1 default level (and theme filter), so a bank with no A1 words produced an empty round; the "no words" message was appended below the tall setup card, often out of view. Empty banks also still showed a form.
+- Fix: personal-bank sources default to All levels/themes (auto-reset when switching source), empty bank renders a dedicated state with CTAs, zero-result feedback is prepended and scrolled into view. Verified locally and on production.
+
 ## 2026-10-20 — Public hosting: Vercel + Turso, anonymous per-browser profiles
 
 - Context: user wants other people to use MyMemo; local SQLite + writable disk is impossible on Vercel serverless (read-only FS, ephemeral /tmp).

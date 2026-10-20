@@ -18,7 +18,7 @@ python3 -m py_compile app.py database.py seed_data.py
 ```
 
 Verify after any change: `curl -s http://localhost:5057/api/bootstrap` returns JSON
-with `summary.libraryCount == 1007` (fresh DB, 1007 unique seed words).
+with `summary.libraryCount == 2036` (fresh DB, 2036 unique seed words).
 
 ## Stack rules
 
@@ -58,6 +58,8 @@ with `summary.libraryCount == 1007` (fresh DB, 1007 unique seed words).
    (puzzle or test) is auto-added server-side via `save_passed_words()` from session
    `results` (`ok: true`, incl. beginner close-pass). Never show `libraryCount` in
    game/setup UI — bank counters are personal (`savedCount`, `masteredCount`, `dueCount`).
+   Manual/imported words are tagged automatically via `auto_tag()` (exact curriculum
+   match, else length + English-keyword heuristics); never ask users for level/theme.
 7. **Spaced repetition:** `apply_results()` owns the schedule — correct bumps box
    (0–5, capped) and sets `due_at = now + BOX_DAYS[box]` (1/2/4/8/16/32 days); a miss
    resets box 0 and `due_at = now`. `dueCount` = due_at NULL or ≤ now. Mastered = box ≥ 3.
