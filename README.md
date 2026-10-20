@@ -8,6 +8,8 @@ transport, healthcare, social services, food, home, nature.
 
 ![menu](https://img.shields.io/badge/menu-play_%7C_save_%7C_test_%7C_settings-blue)
 
+**Live:** https://mymemo-omega.vercel.app · **Code:** https://github.com/AbdKabeer1/mymemo
+
 ## Quick start (local demo)
 
 ```bash

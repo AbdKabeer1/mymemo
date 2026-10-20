@@ -46,6 +46,21 @@ Record choices the next agent should not re-litigate without a reason.
 - Should C2 keep a "social vocabulary" flavour, or broaden to general academic words?
 - Does the user want English→Finnish prompt display in Finnish (Finnish-only practice mode: hide English UI strings)?
 
+## 2026-10-20 — Lightweight accounts (username + password)
+
+- Context: progress was browser-bound; users wanted continuity across devices.
+- Options: OAuth/magic links (email infra), full auth framework, minimal username/password.
+- Chosen: username + PBKDF2 password (Werkzeug), Flask signed-cookie session keyed by `MYMEMO_SECRET`; data scope switches from `b:<client>` to `u:<id>`; registration merges the guest bank; login loads the account. No email, no reset flow.
+- Why: no external services, tiny surface area, works on serverless, preserves anonymous guests.
+- Trade-off: no password recovery (manual DB fix), no email verification, accounts are convenience-grade not high-security. PBKDF2 forced because macOS system Python lacks `hashlib.scrypt`.
+- Revisit if: users need password reset → add email magic-link provider; or OAuth.
+
+## 2026-10-20 — Published code to GitHub
+
+- Context: user asked to publish to their GitHub.
+- Chosen: `gh repo create AbdKabeer1/mymemo --public --push`; secrets excluded via `.gitignore` (`data/`, `.env*`, `.vercel`, `*.db`).
+- Commit: `MyMemo: Finnish spelling trainer with SRS, accounts, Turso + Vercel deploy`.
+
 ## 2026-10-20 — Public hosting: Vercel + Turso, anonymous per-browser profiles
 
 - Context: user wants other people to use MyMemo; local SQLite + writable disk is impossible on Vercel serverless (read-only FS, ephemeral /tmp).

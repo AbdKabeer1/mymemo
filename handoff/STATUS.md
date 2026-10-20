@@ -33,15 +33,21 @@ Last updated: 2026-10-20 08:35
 ## Deployed
 
 - URL: https://mymemo-omega.vercel.app (project `aboki2/mymemo`)
+- Code: https://github.com/AbdKabeer1/mymemo (public, `main`)
+- **Accounts**: username/password (PBKDF2), Flask signed-cookie sessions
+  (`MYMEMO_SECRET` env). Register merges the guest bank; login syncs across devices.
+  Verified locally and on prod: register → pass word → login on "device 2" → same bank;
+  duplicate username 409, wrong password 401. Prod test rows cleaned.
 - Deploy config: `vercel.json` uses `builds` + `routes` (legacy mode) so Flask
   receives the original PATH_INFO; `rewrites` to `/api/index` did not preserve paths.
   `includeFiles: "**"` (single glob string — Vercel rejects arrays here).
-- Env vars (Production): `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`.
+- Env vars (Production): `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `MYMEMO_SECRET`.
 - Verified on prod: `/` 200, `/api/bootstrap` 200 with 1007 curriculum words, static
   CSS 200, POST session persists bank + SRS box, second client isolated (bank 0),
-  test rows cleaned.
-- Security follow-up: rotate the Turso token (it was shared in chat) — create a new
-  token in the Turso dashboard, update the Vercel env var, redeploy.
+  auth flows, test rows cleaned.
+- Security follow-ups: rotate the Turso token (it was shared in chat) — create a new
+  token in the Turso dashboard, update the Vercel env var, redeploy. Passwords have no
+  reset flow by design.
 
 ## Next
 
